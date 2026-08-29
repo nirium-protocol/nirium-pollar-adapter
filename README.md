@@ -85,6 +85,41 @@ pays `/premium/market` ($0.05) instead, which has no such guard and still
 settles on mainnet today; the two linked transactions remain real, they are
 just no longer reproducible verbatim with the current example.
 
+## Deferred funding (Pollar "Deferred mode")
+
+If your Pollar app's **Dashboard → Treasury → Funding Mode** is set to
+**Deferred**, a wallet is created on-chain at login but its XLM reserve is
+not funded until your backend calls `POST /v1/wallets/activate`. This
+adapter did not call that endpoint until this version — the section above
+already shows why it usually does not need to: a wallet at 0 XLM can sign
+and settle a real x402 payment (Pollar sponsors the account reserve and the
+default trustline; the facilitator sponsors the network fee). Call
+`activateWallet()` when you *do* need the account's own reserve — receiving
+native XLM, holding subentries Pollar does not sponsor, or just to match
+what Pollar's dashboard considers "activated."
+
+```ts
+import { activateWallet } from "nirium-pollar-adapter";
+
+// Server-side only (Next.js API route, Express handler, webhook) — never
+// call this from the browser, it requires the secret key.
+const result = await activateWallet(wallet.address, {
+  secretKey: process.env.POLLAR_SECRET_KEY!, // sec_testnet_… / sec_mainnet_…
+});
+// { activated: true, amount: "1.5" }  — funded now
+// { activated: false }                — was already funded; safe, not an error
+```
+
+Calling it twice on an already-funded wallet does not throw — Pollar's own
+docs call HTTP 409 "safe to ignore, treat as success," and `activateWallet`
+returns `{ activated: false }` rather than raising. Anything else throws
+`PollarActivationError` with the real `code` and HTTP `status` Pollar sent,
+rather than assuming a fixed meaning per status number — the two Pollar docs
+pages describing this endpoint disagree with each other on what several of
+the non-200/409 codes mean (402 vs. 403, 503 vs. 502 for what reads like the
+same failure), so this adapter surfaces what the server actually said
+instead of picking one doc to trust.
+
 ## API
 
 ### `createNiriumAdapter(config)`
@@ -136,6 +171,18 @@ is exact and the hash Pollar signs is byte-identical to the one the SDK expects.
 The expiry is taken **from the preimage**, never from the clock: it lives inside
 the signed hash, so asking Pollar for a different one would yield a signature
 that does not validate.
+
+### `activateWallet(publicKey, options)`
+
+Funds a Pollar wallet's on-chain XLM reserve (`POST /v1/wallets/activate`). **Server-side only.**
+
+| Option | Default | |
+|---|---|---|
+| `secretKey` | — | `sec_testnet_…` / `sec_mainnet_…`. Never expose this client-side |
+| `baseUrl` | `https://api.pollar.xyz` | Pollar Server base URL |
+| `fetchImpl` | global `fetch` | for tests or runtimes without global fetch |
+
+Returns `{ activated: boolean, amount?: string }`. Throws `PollarActivationError` (`.code`, `.status`) for anything other than success (200) or already-funded (409). Also throws a plain `Error` synchronously, before any network call, if `publicKey` is not a valid Stellar `G...` address.
 
 ### Paying from a browser
 
