@@ -31,7 +31,7 @@
 
 import { x402Client as X402ClientClass, wrapFetchWithPayment } from "@x402/fetch";
 import { ExactStellarScheme } from "@x402/stellar/exact/client";
-import { Address, rpc, xdr } from "@stellar/stellar-sdk";
+import { Address, StrKey, rpc, xdr } from "@stellar/stellar-sdk";
 import type { SignAuthEntry, SignTransaction } from "@stellar/stellar-sdk/contract";
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -305,6 +305,116 @@ export function createPollarSigner(
 /** ¿Este signer ya puede pagar? Útil para deshabilitar el botón en la UI. */
 export function canSignX402(pollar: PollarLikeClient): boolean {
   return typeof pollar.signAuthEntry === "function";
+}
+
+// ── Fondeo diferido ("Deferred mode" de Pollar) ──────────────────────────────
+//
+// En modo Deferred, Pollar crea la wallet on-chain al hacer login pero SIN
+// fondear su reserva de XLM — existe, pero no puede sostener nada más allá de
+// lo que Pollar mismo patrocina (p.ej. una trustline de sus assets por
+// defecto, vía sponsored reserves). `POST /v1/wallets/activate` paga esa
+// reserva (~1 XLM base + 0.5 XLM por cada asset configurado en tu Dashboard)
+// cuando ocurre el evento de negocio que lo justifica — nunca antes, y nunca
+// desde el navegador: el endpoint exige la SECRET key (Pollar lo dice
+// explícito: exponerla del lado del cliente compromete toda la app).
+//
+// OJO, esto NO es un requisito para pagar con x402 vía este adapter. Un
+// signAuthEntry() firma sin que la cuenta necesite reserva propia — el
+// facilitador patrocina el fee de red, y la trustline que sostiene el saldo
+// puede llegar patrocinada por Pollar también. Verificado en la práctica, no
+// asumido: una wallet a 0 XLM completó un pago x402 real, liquidado y
+// confirmado en Horizon (ver examples/spike-19). Esta función existe para lo
+// que SÍ necesita la reserva propia de la cuenta — recibir XLM nativo,
+// sostener subentries no patrocinados, o simplemente que el estado de tu app
+// coincida con lo que Pollar considera "wallet activada".
+//
+// Nota sobre la tabla de códigos: la "Deferred Flow Guide" y la referencia
+// "Pollar Server API" de docs.pollar.xyz no coinciden entre sí (402 vs 403,
+// 503 vs 502 para el mismo caso) — probablemente una de las dos quedó
+// desactualizada. Por eso esta función no interpreta el código HTTP más allá
+// de 200 (éxito) y 409 (ya activada, docs.pollar.xyz: "safe to ignore, treat
+// as success" — coincide en ambas fuentes): para cualquier otro caso propaga
+// el `code` que Pollar mande, en vez de asumir un significado fijo por número.
+
+export interface ActivateWalletOptions {
+  /** Secret key de Pollar (sec_testnet_… / sec_mainnet_…). SOLO backend — nunca la mandes al navegador. */
+  secretKey: string;
+  /** Base URL del servidor de Pollar. Default: https://api.pollar.xyz. */
+  baseUrl?: string;
+  /** fetch a envolver (para tests o runtimes sin fetch global). */
+  fetchImpl?: typeof fetch;
+}
+
+export interface ActivateWalletResult {
+  /** `true` si esta llamada fondeó la reserva; `false` si ya estaba fondeada (idempotente, HTTP 409). */
+  activated: boolean;
+  /** Reserva de XLM fondeada, tal como la reporta Pollar. Solo viene cuando `activated` es `true` en esta llamada. */
+  amount?: string;
+}
+
+/** Pollar rechazó la activación con un código que no es "ya estaba activa". */
+export class PollarActivationError extends Error {
+  constructor(
+    message: string,
+    /** El `code` que mandó Pollar (p.ej. "WALLET_NOT_FOUND", "FORBIDDEN"), o "UNKNOWN" si no vino. */
+    public readonly code: string,
+    /** El status HTTP real de la respuesta. */
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "PollarActivationError";
+  }
+}
+
+/**
+ * Fondea la reserva de XLM on-chain de una wallet de Pollar en modo Deferred
+ * (`POST /v1/wallets/activate`). Llamar SOLO desde tu backend — la secret key
+ * nunca debe llegar al navegador.
+ *
+ * Cuándo llamarla: no hay un "evento de negocio" natural en un flujo x402 puro
+ * como si lo hay en KYC — el disparador razonable es justo después del login,
+ * antes de mostrar el botón de pago, para que la primera petición del usuario
+ * no se tope con una cuenta a medio activar. Si tu app ya cobra sin problema
+ * con la wallet a 0 XLM (el caso común, ver la nota arriba), puedes no
+ * llamarla nunca; queda disponible para cuando sí la necesites.
+ */
+export async function activateWallet(
+  publicKey: string,
+  options: ActivateWalletOptions,
+): Promise<ActivateWalletResult> {
+  if (!StrKey.isValidEd25519PublicKey(publicKey)) {
+    throw new Error(`activateWallet: "${publicKey}" no es una dirección Stellar G... válida.`);
+  }
+  const baseUrl = (options.baseUrl ?? "https://api.pollar.xyz").replace(/\/+$/, "");
+  const doFetch = options.fetchImpl ?? fetch;
+
+  const res = await doFetch(`${baseUrl}/v1/wallets/activate`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-pollar-api-key": options.secretKey,
+    },
+    body: JSON.stringify({ publicKey }),
+  });
+
+  let body: any = {};
+  try {
+    body = await res.json();
+  } catch {
+    // Cuerpo vacío o no-JSON — se maneja abajo con el status solo.
+  }
+
+  if (res.status === 200 && body?.success) {
+    return { activated: true, amount: body.content?.amount };
+  }
+  if (res.status === 409) {
+    return { activated: false };
+  }
+  throw new PollarActivationError(
+    `Pollar rechazó la activación de ${publicKey}: HTTP ${res.status} ${body?.code ?? "(sin código)"}`,
+    body?.code ?? "UNKNOWN",
+    res.status,
+  );
 }
 
 // ── Adapter ──────────────────────────────────────────────────────────────────
