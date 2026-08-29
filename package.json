@@ -1,0 +1,44 @@
+{
+  "name": "nirium-pollar-adapter",
+  "version": "0.4.1",
+  "description": "Nirium adapter for the Pollar SDK — x402 pay-per-request and IPFS audit anchoring using the wallet a user onboarded through Pollar. Signs SEP-43 auth entries; the facilitator sponsors network fees.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "examples"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^14.0.0",
+    "@x402/core": "2.17.0",
+    "@x402/fetch": "2.17.0",
+    "@x402/stellar": "2.17.0"
+  },
+  "peerDependencies": {
+    "@pollar/core": ">=0.11.0"
+  },
+  "peerDependenciesMeta": {
+    "@pollar/core": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "nirium",
+    "pollar",
+    "stellar",
+    "soroban",
+    "x402",
+    "adapter"
+  ],
+  "homepage": "https://nirium.xyz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nirium-protocol/nirium-pollar-adapter.git"
+  },
+  "license": "MIT"
+}
