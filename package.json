@@ -45,5 +45,5 @@
     "type": "git",
     "url": "https://github.com/nirium-protocol/nirium-pollar-adapter.git"
   },
-  "license": "MIT"
+  "license": "Apache-2.0"
 }
