@@ -4,7 +4,7 @@ Nirium adapter for the [Pollar](https://pollar.xyz) SDK — let the wallet a use
 
 Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**.
 
-Wraps [`nirium`](https://github.com/nirium-protocol/nirium-sdk), the TypeScript/Python SDK this adapter signs for — see that repo for the full API this exposes through a Pollar wallet instead of a raw keypair.
+Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Python SDK this adapter signs for — see that repo for the full API this exposes through a Pollar wallet instead of a raw keypair.
 
 ## Install
 
