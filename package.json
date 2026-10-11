@@ -45,5 +45,8 @@
     "type": "git",
     "url": "https://github.com/nirium-protocol/nirium-pollar-adapter.git"
   },
+  "bugs": {
+    "url": "https://github.com/nirium-protocol/nirium-pollar-adapter/issues"
+  },
   "license": "Apache-2.0"
 }
