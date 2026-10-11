@@ -1,10 +1,10 @@
 # nirium-pollar-adapter
 
-Nirium adapter for the [Pollar](https://pollar.xyz) SDK — let the wallet a user onboarded through Pollar pay for APIs (x402) and anchor tamper-proof evidence to IPFS, without your app touching keys or learning the x402 protocol.
+Nirium adapter for the [Pollar](https://pollar.xyz) SDK. It lets the wallet a user onboarded through Pollar pay for APIs (x402) and anchor tamper-proof evidence to IPFS, without your app touching keys or learning the x402 protocol.
 
 Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**.
 
-Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Python SDK this adapter signs for — see that repo for the full API this exposes through a Pollar wallet instead of a raw keypair.
+Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Python SDK this adapter signs for. See that repo for the full API this exposes through a Pollar wallet instead of a raw keypair.
 
 ## Install
 
@@ -34,13 +34,13 @@ const res = await nirium.x402Fetch(
 const data = await res.json();
 ```
 
-The user pays **$0.05 USDC** and signs nothing else — network fees are sponsored by the x402 facilitator, so the wallet does not need XLM for gas.
+The user pays **$0.05 USDC** and signs nothing else. The x402 facilitator sponsors the network fee, so the wallet does not need XLM for gas.
 
 ### Requires @pollar/core 0.11+
 
 `createPollarSigner` calls `PollarClient.signAuthEntry`, available from `@pollar/core` 0.11. On older versions it throws an explanatory error, and you can still pass any other SEP-43 signer.
 
-The two sides speak different dialects and the adapter translates between them: x402 expects SEP-43 (`signAuthEntry(xdr, { networkPassphrase, address }) → { signedAuthEntry }`), Pollar expects `signAuthEntry(xdr, { validUntilLedger }) → { status, … }`. The adapter reads the network's latest ledger, sets the expiry, and normalises the outcome — you do not deal with any of it.
+The two sides speak different dialects and the adapter translates between them: x402 expects SEP-43 (`signAuthEntry(xdr, { networkPassphrase, address }) → { signedAuthEntry }`), Pollar expects `signAuthEntry(xdr, { validUntilLedger }) → { status, … }`. The adapter reads the network's latest ledger, sets the expiry, and normalises the outcome. You do not deal with any of it.
 
 ```ts
 const signer = createPollarSigner(pollar, {
@@ -53,12 +53,12 @@ Check at runtime before enabling a pay button:
 
 ```ts
 import { canSignX402 } from "nirium-pollar-adapter";
-<button disabled={!canSignX402(pollar)}>Pay $0.02</button>
+<button disabled={!canSignX402(pollar)}>Pay $0.05</button>
 ```
 
 ## Verify it end-to-end today
 
-The signer is pluggable, so you can prove the whole path works with a plain Stellar keypair — no Pollar required:
+The signer is pluggable, so you can prove the whole path works with a plain Stellar keypair. No Pollar required:
 
 ```bash
 NIRIUM_DEMO_SECRET=S… node examples/pay-with-keypair.mjs
@@ -74,53 +74,53 @@ Swapping to a Pollar wallet is one line:
 ```
 
 **Verified with a real Pollar social login (our own test account, 5 Aug
-2026):** a user who signed in with Google paid $0.02 USDC on mainnet —
-[`e4fa3df9…`](https://stellar.expert/explorer/public/tx/e4fa3df9cb225a4d7f64dd0082eb38218ada4b4af3378f288989a5d4b1116ed9)
-— holding **zero XLM** at any point. Pollar sponsors the account reserve and the
-trustline; the x402 facilitator sponsors the network fee and is the transaction
-source. The user never saw a key, a seed phrase or a gas prompt.
+2026):** a user who signed in with Google paid $0.02 USDC on mainnet
+([`e4fa3df9…`](https://stellar.expert/explorer/public/tx/e4fa3df9cb225a4d7f64dd0082eb38218ada4b4af3378f288989a5d4b1116ed9))
+while holding **zero XLM** at every point. Pollar sponsors the account reserve
+and the trustline. The x402 facilitator sponsors the network fee and is the
+transaction source. The user never saw a key, a seed phrase or a gas prompt.
 
 Both proofs above paid `/premium/signals` ($0.02). Since 6-Aug-2026 that
-endpoint is **testnet only** — the mainnet agent box runs no autonomous loop,
+endpoint is **testnet only**: the mainnet agent box runs no autonomous loop,
 so a capability guard now returns 501 before any charge. The example above
 pays `/premium/market` ($0.05) instead, which has no such guard and still
-settles on mainnet today; the two linked transactions remain real, they are
-just no longer reproducible verbatim with the current example.
+settles on mainnet today. The two linked transactions remain real; they are
+just no longer reproducible word for word with the current example.
 
 ## Deferred funding (Pollar "Deferred mode")
 
 If your Pollar app's **Dashboard → Treasury → Funding Mode** is set to
 **Deferred**, a wallet is created on-chain at login but its XLM reserve is
 not funded until your backend calls `POST /v1/wallets/activate`. This
-adapter did not call that endpoint until this version — the section above
+adapter did not call that endpoint until this version. The section above
 already shows why it usually does not need to: a wallet at 0 XLM can sign
 and settle a real x402 payment (Pollar sponsors the account reserve and the
 default trustline; the facilitator sponsors the network fee). Call
-`activateWallet()` when you *do* need the account's own reserve — receiving
+`activateWallet()` when you *do* need the account's own reserve: receiving
 native XLM, holding subentries Pollar does not sponsor, or just to match
 what Pollar's dashboard considers "activated."
 
 ```ts
 import { activateWallet } from "nirium-pollar-adapter";
 
-// Server-side only (Next.js API route, Express handler, webhook) — never
-// call this from the browser, it requires the secret key.
+// Server-side only (Next.js API route, Express handler, webhook). Never
+// call this from the browser: it requires the secret key.
 const result = await activateWallet(wallet.address, {
   secretKey: process.env.POLLAR_SECRET_KEY!, // sec_testnet_… / sec_mainnet_…
 });
-// { activated: true, amount: "1.5" }  — funded now
-// { activated: false }                — was already funded; safe, not an error
+// { activated: true, amount: "1.5" }  - funded now
+// { activated: false }                - was already funded; safe, not an error
 ```
 
-Calling it twice on an already-funded wallet does not throw — Pollar's own
+Calling it twice on an already-funded wallet does not throw. Pollar's own
 docs call HTTP 409 "safe to ignore, treat as success," and `activateWallet`
 returns `{ activated: false }` rather than raising. Anything else throws
 `PollarActivationError` with the real `code` and HTTP `status` Pollar sent,
-rather than assuming a fixed meaning per status number — the two Pollar docs
-pages describing this endpoint disagree with each other on what several of
-the non-200/409 codes mean (402 vs. 403, 503 vs. 502 for what reads like the
-same failure), so this adapter surfaces what the server actually said
-instead of picking one doc to trust.
+rather than assuming a fixed meaning per status number. The two Pollar docs
+pages that describe this endpoint disagree on what several of the non-200/409
+codes mean (402 vs. 403, 503 vs. 502 for what reads like the same failure),
+so this adapter passes on what the server actually said instead of picking
+one doc to trust.
 
 ## API
 
@@ -128,7 +128,7 @@ instead of picking one doc to trust.
 
 | Option | Default | |
 |---|---|---|
-| `signer` | — | SEP-43 signer. Only `address` and `signAuthEntry` are required |
+| `signer` | - | SEP-43 signer. Only `address` and `signAuthEntry` are required |
 | `network` | `stellar:testnet` | `stellar:testnet` or `stellar:pubnet` |
 | `agentBaseUrl` | box for the network | Nirium agent base URL |
 | `rpcUrl` | public RPC for the network | Soroban RPC |
@@ -136,11 +136,11 @@ instead of picking one doc to trust.
 
 Returns:
 
-- **`x402Fetch(url, init?)`** — fetch that pays on `402` and retries. Passes through untouched on `200`.
-- **`getPremiumSignals()`** — typed shortcut to the agent's paid signals endpoint. **Testnet only**: signals come from the autonomous loop, which does not run on the mainnet box; there the endpoint returns 501 without charging.
-- **`getPremiumMarket()`** — typed shortcut to the agent's paid market-state endpoint ($0.05). Works and charges on **both** networks — no autonomous loop dependency.
-- **`anchorAuditRecord({ hash?, record?, txHash?, tag? })`** — anchors evidence to IPFS, returns the CID. No signature, no payment. Anchor **hashes, not personal data** — IPFS cannot be deleted.
-- **`getCetesRate()`** — public reference rate, no key required.
+- **`x402Fetch(url, init?)`**: fetch that pays on `402` and retries. Passes through untouched on `200`.
+- **`getPremiumSignals()`**: typed shortcut to the agent's paid signals endpoint. **Testnet only**: signals come from the autonomous loop, which does not run on the mainnet box; there the endpoint returns 501 without charging.
+- **`getPremiumMarket()`**: typed shortcut to the agent's paid market-state endpoint ($0.05). Works and charges on **both** networks, with no dependency on the autonomous loop.
+- **`anchorAuditRecord({ hash?, record?, txHash?, tag? })`**: anchors evidence to IPFS and returns the CID. No signature, no payment. Anchor **hashes, not personal data**: IPFS cannot be deleted.
+- **`getCetesRate()`**: CETES rate as a number, no key required. It is **not a live reading**: today the agent serves a fixed value (5.57, read in June 2026 from app.etherfuse.com/b/cetes).
 
 ### `createPollarSigner(pollarClient, opts?)`
 
@@ -156,20 +156,20 @@ Wraps a Pollar client as a SEP-43 `ClientStellarSigner`.
 **`signAuthEntry` means two different things, and this is what translates them.**
 
 `stellar-sdk` (`AssembledTransaction.signAuthEntries` → `authorizeEntry`) hands
-the signer a **`HashIdPreimage`** — the thing about to be hashed — and expects
+the signer a **`HashIdPreimage`** (the thing about to be hashed) and expects
 the **raw signature** back; it assembles the final entry itself. Pollar's
 `POST /tx/sign-auth-entry` expects the full **`SorobanAuthorizationEntry`** and
-returns the **signed entry**, because its backend validates the invocation tree
+returns the **signed entry**, because its backend checks the invocation tree
 against your Auth Policy allowlist before signing, and a hash would tell it
 nothing. Both designs are right; they are just not the same one.
 
-Without translation Pollar answers `SOROBAN_AUTH_ENTRY_INVALID — "entryXdr is
+Without translation Pollar answers `SOROBAN_AUTH_ENTRY_INVALID - "entryXdr is
 not a valid SorobanAuthorizationEntry"`, which reads like a corrupt XDR when the
-XDR is fine and merely of another type.
+XDR is fine and simply of another type.
 
-The preimage carries nonce, expiry and invocation; the only thing the entry
-additionally needs is the signer address, which we have — so the reconstruction
-is exact and the hash Pollar signs is byte-identical to the one the SDK expects.
+The preimage carries nonce, expiry and invocation. The only extra thing the
+entry needs is the signer address, which we have, so the rebuilt entry is exact
+and the hash Pollar signs is byte-identical to the one the SDK expects.
 The expiry is taken **from the preimage**, never from the clock: it lives inside
 the signed hash, so asking Pollar for a different one would yield a signature
 that does not validate.
@@ -180,7 +180,7 @@ Funds a Pollar wallet's on-chain XLM reserve (`POST /v1/wallets/activate`). **Se
 
 | Option | Default | |
 |---|---|---|
-| `secretKey` | — | `sec_testnet_…` / `sec_mainnet_…`. Never expose this client-side |
+| `secretKey` | - | `sec_testnet_…` / `sec_mainnet_…`. Never expose this client-side |
 | `baseUrl` | `https://api.pollar.xyz` | Pollar Server base URL |
 | `fetchImpl` | global `fetch` | for tests or runtimes without global fetch |
 
@@ -210,10 +210,10 @@ request is rejected.
 |---|---|
 | x402 Settlement | ✅ mainnet |
 | Audit Trail (IPFS) | ✅ mainnet |
-| Treasury vault (DeFindex, client-owned) — Nirium signs and executes | ✅ mainnet — invite-only during legal review |
-| Treasury vault — propose only, you sign | ✅ mainnet — public, no invite required (`POST /api/treasury/rebalance/propose`, not yet wrapped by this adapter) |
-| Nirium's own NiriumVault | audit-gated — testnet only |
-| MPP session channels | audit-gated — testnet only |
+| Treasury vault (DeFindex, client-owned), Nirium signs and executes | ✅ mainnet, invite-only during legal review |
+| Treasury vault, propose only, you sign | ✅ mainnet, public, no invite required (`POST /api/treasury/rebalance/propose`, not yet wrapped by this adapter) |
+| Nirium's own NiriumVault | audit-gated, testnet only |
+| MPP session channels | audit-gated, testnet only |
 
 Nirium never holds customer funds. The user's signature is the authorization; regulated partners execute any financial settlement.
 
