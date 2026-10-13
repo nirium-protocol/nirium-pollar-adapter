@@ -10,7 +10,7 @@ Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Pyth
 
 ```bash
 npm install nirium-pollar-adapter
-# optional peer, only for createPollarSigner: @pollar/core >= 0.11
+# optional peer, only for createPollarSigner: @pollar/core ^0.11.4
 ```
 
 ## Quickstart
@@ -36,9 +36,9 @@ const data = await res.json();
 
 The user pays **$0.05 USDC** and signs nothing else. The x402 facilitator sponsors the network fee, so the wallet does not need XLM for gas.
 
-### Requires @pollar/core 0.11+
+### Requires @pollar/core 0.11.4+
 
-`createPollarSigner` calls `PollarClient.signAuthEntry`, available from `@pollar/core` 0.11. On older versions it throws an explanatory error, and you can still pass any other SEP-43 signer.
+`createPollarSigner` calls `PollarClient.signAuthEntry`, available from `@pollar/core` 0.11. The peer range is `^0.11.4`, the version this package is tested against. On older versions it throws an explanatory error, and you can still pass any other SEP-43 signer.
 
 The two sides speak different dialects and the adapter translates between them: x402 expects SEP-43 (`signAuthEntry(xdr, { networkPassphrase, address }) → { signedAuthEntry }`), Pollar expects `signAuthEntry(xdr, { validUntilLedger }) → { status, … }`. The adapter reads the network's latest ledger, sets the expiry, and normalises the outcome. You do not deal with any of it.
 
@@ -203,6 +203,20 @@ Client side, `connect-src` must list the resource server, the Soroban RPC and
 Pollar side: allowlist the USDC SAC with the `transfer` function under
 **Treasury → Auth Policy**. Until a contract is listed, every custodial signing
 request is rejected.
+
+## How this relates to Pollar's `AdapterFn` pattern
+
+Pollar's own adapters (for example the Trustless Work one in its demo) follow the `AdapterFn` pattern from `@pollar/core`: each function returns `{ unsignedTransaction }`, the functions are registered on `PollarProvider` through `adapters={{ ... }}`, and the hook made by `createPollarAdapterHook` signs that transaction with the user's wallet and submits it to the network (`signAndSubmitTx`).
+
+This package does not follow that pattern, on purpose. An x402 payment is not a transaction that gets submitted. The user signs a Soroban authorization entry, it travels to the seller in a header, and the x402 facilitator settles it. If an adapter returned it as `unsignedTransaction`, the hook would submit it to the network by itself. So `createNiriumAdapter` runs the payment itself (it negotiates the 402, signs through `createPollarSigner` and retries), and anchoring is a plain HTTP call.
+
+In practice:
+
+- You use `createNiriumAdapter` directly. It is not registered under `PollarProvider adapters`, and there is no `createPollarAdapterHook` hook for it.
+- Nirium operations that do return an unsigned transaction (treasury, payouts) are not exposed here as `AdapterFn`s. They are invite-only on mainnet and outside the scope of this package.
+- A registry-pattern version of the payment flow is not shipped. Whether one is possible depends on how an adapter could hand back a signed authorization entry instead of a transaction. That is an open design question, not a plan.
+
+Checked on 2026-10-12 against the published `@pollar/core` 0.11.4 and `@pollar/react` 0.11.4 packages, not their docs. CI runs a contract test against the real `@pollar/core` 0.11.4 (`test/pollar-contract.test.mjs` and a compile-time check in `test/pollar-contract.types.ts`), so a change in the shape this package relies on fails the build.
 
 ## Scope
 
