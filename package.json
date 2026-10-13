@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.contract.json",
     "test": "npm run build && node --test test/*.test.mjs"
   },
   "dependencies": {
@@ -21,7 +21,7 @@
     "@x402/stellar": "2.17.0"
   },
   "peerDependencies": {
-    "@pollar/core": ">=0.11.0"
+    "@pollar/core": "^0.11.4"
   },
   "peerDependenciesMeta": {
     "@pollar/core": {
@@ -29,6 +29,7 @@
     }
   },
   "devDependencies": {
+    "@pollar/core": "0.11.4",
     "@types/node": "^20.19.0",
     "typescript": "^5.7.0"
   },
