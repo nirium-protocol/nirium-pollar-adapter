@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing. This repository holds the Nirium adapter for the Pollar SDK - a single TypeScript package published as `nirium-pollar-adapter` on npm. It does not contain Nirium's agent runtime or Soroban contracts, which are maintained privately.
 
-> **Note:** Nirium operates under the [Stellar Code of Conduct](https://github.com/Eras256/Nirium/blob/main/CODE_OF_CONDUCT.md). Violations can be reported to [niriumprotocol@gmail.com](mailto:niriumprotocol@gmail.com) or [community@stellar.org](mailto:community@stellar.org).
+> **Note:** Nirium operates under the [Stellar Code of Conduct](https://github.com/nirium-protocol/nirium-core/blob/main/CODE_OF_CONDUCT.md). Violations can be reported to [niriumprotocol@gmail.com](mailto:niriumprotocol@gmail.com) or [community@stellar.org](mailto:community@stellar.org).
 
 ---
 
@@ -28,6 +28,7 @@ npm run build
 |--------|-------------|
 | `npm run build` | Compile TypeScript (`tsc`) |
 | `npm run typecheck` | Type-check without emitting |
+| `npm test` | Build, then run the contract test against the real `@pollar/core` |
 
 ---
 
@@ -49,7 +50,7 @@ nirium-pollar-adapter/
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feat/my-feature`
 3. Make your changes
-4. Run `npm run typecheck` for the change you made
+4. Run `npm run typecheck` and `npm test` for the change you made
 5. Commit using conventional commits (see below)
 6. Push and open a PR against `main`
 
@@ -91,7 +92,7 @@ Include: description, reproduction steps, potential impact, and any suggested re
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
+By contributing, you agree that your contributions will be licensed under the [Apache-2.0 License](LICENSE).
 
 ---
 
