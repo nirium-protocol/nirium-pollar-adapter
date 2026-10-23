@@ -1,6 +1,6 @@
 # Contributing to nirium-pollar-adapter
 
-Thank you for your interest in contributing. This repository holds the Nirium adapter for the Pollar SDK — a single TypeScript package published as `nirium-pollar-adapter` on npm. It does not contain Nirium's agent runtime or Soroban contracts, which are maintained privately.
+Thank you for your interest in contributing. This repository holds the Nirium adapter for the Pollar SDK - a single TypeScript package published as `nirium-pollar-adapter` on npm. It does not contain Nirium's agent runtime or Soroban contracts, which are maintained privately.
 
 > **Note:** Nirium operates under the [Stellar Code of Conduct](https://github.com/Eras256/Nirium/blob/main/CODE_OF_CONDUCT.md). Violations can be reported to [niriumprotocol@gmail.com](mailto:niriumprotocol@gmail.com) or [community@stellar.org](mailto:community@stellar.org).
 
@@ -53,7 +53,7 @@ nirium-pollar-adapter/
 5. Commit using conventional commits (see below)
 6. Push and open a PR against `main`
 
-Reviewers will not follow up for missing context — include a clear description of what changed and why.
+Reviewers will not follow up for missing context - include a clear description of what changed and why.
 
 ### Commit Convention
 
@@ -70,12 +70,12 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### AI Assistance Disclosure
 
-Every commit produced with AI assistance carries a `Co-Authored-By: <model> <noreply@anthropic.com>` trailer, where `<model>` is the model that actually produced that commit (for example `Claude Sonnet 5.5` or `Claude Opus 5.5`), never a fixed name. This is a factual disclosure of how the commit was produced — it is never stripped to make a commit look human-authored, and never added where it doesn't apply to fake the opposite. If you use AI assistance in your own contributions, disclose it the same way.
+Every commit produced with AI assistance carries a `Co-Authored-By: <model> <noreply@anthropic.com>` trailer, where `<model>` is the model that actually produced that commit (for example `Claude Sonnet 5.5` or `Claude Opus 5.5`), never a fixed name. This is a factual disclosure of how the commit was produced - it is never stripped to make a commit look human-authored, and never added where it doesn't apply to fake the opposite. If you use AI assistance in your own contributions, disclose it the same way.
 
 ### Code Style
 
 - **TypeScript:** strict mode, explicit types for all public APIs
-- **Comments:** only when the *why* is non-obvious — no narration of what the code does
+- **Comments:** only when the *why* is non-obvious - no narration of what the code does
 
 ---
 
