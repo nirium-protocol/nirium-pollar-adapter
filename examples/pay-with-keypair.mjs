@@ -8,11 +8,16 @@
 //   -  const signer = createEd25519Signer(secret, network);
 //   +  const signer = createPollarSigner(pollarClient);
 //
-// Uso:
+// Uso (default = testnet, seguro, sin gasto real):
 //   NIRIUM_DEMO_SECRET=S... node examples/pay-with-keypair.mjs
-//   NIRIUM_DEMO_SECRET=S... NIRIUM_NETWORK=stellar:testnet node examples/pay-with-keypair.mjs
 //
-// OJO: contra stellar:pubnet esto gasta USDC REAL (0.05 por llamada a market).
+// Contra mainnet (gasta USDC REAL, 0.05 por llamada a market) — opt-in explícito:
+//   NIRIUM_DEMO_SECRET=S... NIRIUM_NETWORK=stellar:pubnet node examples/pay-with-keypair.mjs
+//
+// Update, 2026-10-24: el default de este archivo era "stellar:pubnet" —
+// quien corriera el primer comando de uso tal cual, sin leer el resto del
+// comentario, gastaba USDC real sin darse cuenta. El default ahora es
+// testnet; pubnet pide la variable de entorno a propósito.
 //
 // Usa getPremiumMarket(), no getPremiumSignals(): desde el 6-ago-2026 el box
 // de mainnet responde 501 a /premium/signals ANTES de cobrar (no hay loop
@@ -29,7 +34,7 @@ if (!secret) {
   process.exit(1);
 }
 
-const network = process.env.NIRIUM_NETWORK ?? "stellar:pubnet";
+const network = process.env.NIRIUM_NETWORK ?? "stellar:testnet";
 const signer = createEd25519Signer(secret, network);
 const nirium = createNiriumAdapter({ signer, network });
 
