@@ -58,10 +58,16 @@ import { canSignX402 } from "nirium-pollar-adapter";
 
 ## Verify it end-to-end today
 
-The signer is pluggable, so you can prove the whole path works with a plain Stellar keypair. No Pollar required:
+The signer is pluggable, so you can prove the whole path works with a plain Stellar keypair. No Pollar required - this defaults to testnet, no real money moves:
 
 ```bash
 NIRIUM_DEMO_SECRET=S… node examples/pay-with-keypair.mjs
+```
+
+Against mainnet (spends real USDC, $0.05 per call), opt in explicitly:
+
+```bash
+NIRIUM_DEMO_SECRET=S… NIRIUM_NETWORK=stellar:pubnet node examples/pay-with-keypair.mjs
 ```
 
 Verified on mainnet (27 Jul 2026): payment [`25ebaf9a…`](https://stellar.expert/explorer/public/tx/25ebaf9aa7e72c1c3edcc43a1c18aaa102c12eee42c57e02fed4fda79af6605d) settled, evidence anchored at [`QmZiwxidm…`](https://gateway.pinata.cloud/ipfs/QmZiwxidm7pcTqNufxzFyUc7qJrCRN2TKRNwcXkg7vUUwR).
