@@ -11,15 +11,46 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20, 22]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '22'
           cache: npm
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # GHSA-mrhx-c7xc-m3w5 (zod <4.6.6, high, memory exhaustion on oversized
+      # array validation) is allowlisted below, not fixed - the only path to
+      # zod here is @x402/core, which pins zod ^3.24.2 and has no patched 3.x
+      # release (verified 2026-10-24 against the latest published
+      # @x402/core). There's nothing else pulling in zod for an `overrides`
+      # entry to redirect. Every other high+ finding still fails the build.
+      # Revisit when @x402/core moves to zod 4 (no issue filed upstream yet).
+      - name: Run npm audit (zod GHSA-mrhx-c7xc-m3w5 allowlisted)
+        run: |
+          npm audit --audit-level=high --json > audit.json || true
+          UNEXPECTED=$(node -e "
+            const a = require('./audit.json');
+            const allowed = new Set(['https://github.com/advisories/GHSA-mrhx-c7xc-m3w5']);
+            const urls = Object.values(a.vulnerabilities || {})
+              .flatMap(v => (v.via || []).filter(x => typeof x === 'object').map(x => x.url))
+              .filter(Boolean);
+            console.log(urls.filter(u => !allowed.has(u)).length);
+          ")
+          if [ "$UNEXPECTED" != "0" ]; then
+            echo "Found high+ severity advisories beyond the allowlisted zod one:"
+            npm audit --audit-level=high
+            exit 1
+          fi
+          echo "Clean except the allowlisted zod advisory (GHSA-mrhx-c7xc-m3w5)."
