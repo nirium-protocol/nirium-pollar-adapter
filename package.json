@@ -33,7 +33,7 @@
     }
   },
   "devDependencies": {
-    "@pollar/core": "0.11.4",
+    "@pollar/core": "0.12.0",
     "@types/node": "^26.6.5",
     "typescript": "^5.7.0"
   },
