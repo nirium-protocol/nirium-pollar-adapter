@@ -35,7 +35,7 @@
   "devDependencies": {
     "@pollar/core": "0.11.4",
     "@types/node": "^26.6.5",
-    "typescript": "^5.7.0"
+    "typescript": "^7.0.2"
   },
   "keywords": [
     "nirium",
