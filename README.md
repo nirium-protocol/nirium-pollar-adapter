@@ -10,7 +10,7 @@ Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Pyth
 
 ```bash
 npm install nirium-pollar-adapter
-# optional peer, only for createPollarSigner: @pollar/core ^0.11.4
+# optional peer, only for createPollarSigner: @pollar/core >=0.11.4 <0.13.0
 ```
 
 ## Quickstart
@@ -38,7 +38,7 @@ The user pays **$0.05 USDC** and signs nothing else. The x402 facilitator sponso
 
 ### Requires @pollar/core 0.11.4+
 
-`createPollarSigner` calls `PollarClient.signAuthEntry`, available from `@pollar/core` 0.11. The peer range is `^0.11.4`, the version this package is tested against. On older versions it throws an explanatory error, and you can still pass any other SEP-43 signer.
+`createPollarSigner` calls `PollarClient.signAuthEntry`, available from `@pollar/core` 0.11. The peer range is `>=0.11.4 <0.13.0`; CI runs the contract test against 0.11.4; 0.12.0 was also run by hand on 2026-10-31. On older versions it throws an explanatory error, and you can still pass any other SEP-43 signer.
 
 The two sides speak different dialects and the adapter translates between them: x402 expects SEP-43 (`signAuthEntry(xdr, { networkPassphrase, address }) → { signedAuthEntry }`), Pollar expects `signAuthEntry(xdr, { validUntilLedger }) → { status, … }`. The adapter reads the network's latest ledger, sets the expiry, and normalises the outcome. You do not deal with any of it.
 
