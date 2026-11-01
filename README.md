@@ -96,15 +96,19 @@ just no longer reproducible word for word with the current example.
 ## Deferred funding (Pollar "Deferred mode")
 
 If your Pollar app's **Dashboard → Treasury → Funding Mode** is set to
-**Deferred**, a wallet is created on-chain at login but its XLM reserve is
-not funded until your backend calls `POST /v3/wallets/fund`. This
-adapter did not call that endpoint until this version. The section above
-already shows why it usually does not need to: a wallet at 0 XLM can sign
-and settle a real x402 payment (Pollar sponsors the account reserve and the
-default trustline; the facilitator sponsors the network fee). Call
-`activateWallet()` when you *do* need the account's own reserve: receiving
-native XLM, holding subentries Pollar does not sponsor, or just to match
-what Pollar's dashboard considers "activated."
+**Deferred**, Pollar does not create the account on-chain at login. Your
+backend creates it by calling `POST /v3/wallets/fund`. Checked on testnet on
+2026-10-31: for a wallet that did not exist yet (Horizon returned 404), the
+call returned 200 with `startingBalance: "0"`, and Horizon then showed the
+account with 0 XLM and its reserves sponsored by Pollar. So "funding" here
+means creating the account with sponsored reserves, not sending XLM to it.
+
+You often do not need it for x402. A wallet at 0 XLM can sign and settle a
+real x402 payment (see the section above: Pollar sponsors the reserve and
+the default trustline, and the facilitator sponsors the network fee). Call
+`activateWallet()` when your app needs the account to exist on-chain before
+that first payment, or to match what Pollar's dashboard considers
+"activated."
 
 ```ts
 import { activateWallet } from "nirium-pollar-adapter";
@@ -115,7 +119,7 @@ const result = await activateWallet(wallet.address, {
   secretKey: process.env.POLLAR_SECRET_KEY!, // sec_testnet_… / sec_mainnet_…
 });
 // { activated: true, amount: "0" }  - funded now (amount = Pollar's startingBalance)
-// { activated: false }                - was already funded; safe, not an error
+// { activated: false }                - account already exists on-chain; safe, not an error
 ```
 
 Calling it twice on an already-funded wallet does not throw. Pollar's own
@@ -182,7 +186,7 @@ that does not validate.
 
 ### `activateWallet(publicKey, options)`
 
-Funds a Pollar wallet's on-chain XLM reserve (`POST /v3/wallets/fund`). **Server-side only.**
+Creates a Pollar wallet's account on-chain with sponsored reserves, for apps in Deferred funding mode (`POST /v3/wallets/fund`). **Server-side only.**
 
 | Option | Default | |
 |---|---|---|
@@ -190,7 +194,7 @@ Funds a Pollar wallet's on-chain XLM reserve (`POST /v3/wallets/fund`). **Server
 | `baseUrl` | `https://server.api.pollar.xyz` | Pollar Server base URL |
 | `fetchImpl` | global `fetch` | for tests or runtimes without global fetch |
 
-Returns `{ activated: boolean, amount?: string }`. Throws `PollarActivationError` (`.code`, `.status`) for anything other than success (200) or already-funded (409). Also throws a plain `Error` synchronously, before any network call, if `publicKey` is not a valid Stellar `G...` address.
+Returns `{ activated: boolean, amount?: string, queued?: boolean }`. `amount` is the `startingBalance` Pollar reports (`"0"` in the testnet run above). `queued` is `true` on HTTP 202, for co-signed or self-custody wallets, where the user approves the request in their next session. Throws `PollarActivationError` (`.code`, `.status`) for anything other than success (200) or already-funded (409). Also throws a plain `Error` synchronously, before any network call, if `publicKey` is not a valid Stellar `G...` address.
 
 ### Paying from a browser
 
