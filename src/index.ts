@@ -407,7 +407,8 @@ export async function activateWallet(
   }
 
   if (res.status === 200 && body?.success !== false) {
-    return { activated: true, amount: body?.content?.amount };
+    // Pollar v3 devuelve content.startingBalance (verificado en testnet 2026-10-31); `amount` era el nombre de v1.
+    return { activated: true, amount: body?.content?.startingBalance ?? body?.content?.amount };
   }
   if (res.status === 202) {
     return { activated: false, queued: true };

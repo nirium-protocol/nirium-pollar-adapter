@@ -82,3 +82,14 @@ test("activateWallet reports a queued request on 202 (co-signed or self-custody 
   const result = await activateWallet(GOOD_KEY, { secretKey: "sec_testnet_x", fetchImpl });
   assert.deepEqual(result, { activated: false, queued: true });
 });
+
+test("activateWallet reads startingBalance from the real v3 200 body", async () => {
+  // Shape captured from Pollar's testnet on 2026-10-31.
+  const fetchImpl = mockFetch(200, {
+    content: { publicKey: GOOD_KEY, startingBalance: "0" },
+    code: "SERVER_WALLET_FUNDED",
+    success: true,
+  });
+  const result = await activateWallet(GOOD_KEY, { secretKey: "sec_testnet_x", fetchImpl });
+  assert.deepEqual(result, { activated: true, amount: "0" });
+});
