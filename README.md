@@ -114,7 +114,7 @@ import { activateWallet } from "nirium-pollar-adapter";
 const result = await activateWallet(wallet.address, {
   secretKey: process.env.POLLAR_SECRET_KEY!, // sec_testnet_… / sec_mainnet_…
 });
-// { activated: true, amount: "1.5" }  - funded now
+// { activated: true, amount: "0" }  - funded now (amount = Pollar's startingBalance)
 // { activated: false }                - was already funded; safe, not an error
 ```
 
