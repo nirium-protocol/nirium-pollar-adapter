@@ -1,6 +1,6 @@
 {
   "name": "nirium-pollar-adapter",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Nirium adapter for the Pollar SDK — x402 pay-per-request and IPFS audit anchoring using the wallet a user onboarded through Pollar. Signs SEP-43 auth entries; the facilitator sponsors network fees. Includes Deferred-mode wallet activation (POST /v1/wallets/activate).",
   "type": "module",
   "main": "dist/index.js",
