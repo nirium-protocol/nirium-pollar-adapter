@@ -196,6 +196,23 @@ Creates a Pollar wallet's account on-chain with sponsored reserves, for apps in 
 
 Returns `{ activated: boolean, amount?: string, queued?: boolean }`. `amount` is the `startingBalance` Pollar reports (`"0"` in the testnet run above). `queued` is `true` on HTTP 202, for co-signed or self-custody wallets, where the user approves the request in their next session. Throws `PollarActivationError` (`.code`, `.status`) for anything other than success (200) or already-funded (409). Also throws a plain `Error` synchronously, before any network call, if `publicKey` is not a valid Stellar `G...` address.
 
+### `anchorOnTransactionSuccess(pollarClient, adapter, options?)`
+
+Anchors an Audit Trail receipt each time a Pollar transaction reaches `success`. It listens to Pollar's `onTransactionStateChange`, which Pollar emits for custodial, external, passkey and co-signed wallets. It is **not** emitted for x402 payments, which this adapter anchors itself. Returns a function that stops listening.
+
+```ts
+import { createNiriumAdapter, anchorOnTransactionSuccess } from "nirium-pollar-adapter";
+
+const adapter = createNiriumAdapter({ signer });
+const stop = anchorOnTransactionSuccess(pollar, adapter, {
+  onError: (err, hash) => console.error("anchor failed", hash, err),
+});
+```
+
+The receipt carries only `chain`, `network`, `hash` and `observedAt` (no app id), because what goes into IPFS is not deleted. Pollar replays the current state when you subscribe, so the function deduplicates by hash inside the process. It does not deduplicate across restarts: the same hash can be anchored twice. A failed anchor goes to `onError` and never throws into Pollar's listener; the hash can be retried when Pollar sends it again. Options: `chain` (default `"stellar"`), `tag` (default `"pollar-tx"`), `onError`.
+
+Checked against `@pollar/core` 0.11.4 and 0.12.0 in the test suite. Not run against a live Pollar transaction yet.
+
 ### Paying from a browser
 
 Three server-side settings are not optional, and all three fail with messages
