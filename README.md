@@ -211,7 +211,9 @@ const stop = anchorOnTransactionSuccess(pollar, adapter, {
 
 The receipt carries only `chain`, `network`, `hash` and `observedAt` (no app id), because what goes into IPFS is not deleted. Pollar replays the current state when you subscribe, so the function deduplicates by hash inside the process. It does not deduplicate across restarts: the same hash can be anchored twice. A failed anchor goes to `onError` and never throws into Pollar's listener; the hash can be retried when Pollar sends it again. Options: `chain` (default `"stellar"`), `tag` (default `"pollar-tx"`), `onError`.
 
-Checked against `@pollar/core` 0.11.4 and 0.12.0 in the test suite. Not run against a live Pollar transaction yet.
+Checked against `@pollar/core` 0.11.4 and 0.12.0 in the test suite.
+
+**Live check, 2026-11-01, testnet.** `examples/spike-19/anchor-on-success.mjs` logs in to a Pollar testnet app, sends 1 XLM through `pollar.sendPayment`, and anchors the receipt. Transaction [`95717202...b7b`](https://horizon-testnet.stellar.org/transactions/95717202be514ed0ae6d59d88c5950d79ff94b40dad709a430691ad6c4449b7b) (successful, ledger 5506358, 1 payment op) produced Audit Trail receipt [`QmboKKkuwck3zvRx2bqnzUdDFkrEtc1VUHo6rrzm9nyBtD`](https://gateway.pinata.cloud/ipfs/QmboKKkuwck3zvRx2bqnzUdDFkrEtc1VUHo6rrzm9nyBtD). The record holds only `chain`, `network`, `hash` and `observedAt`, and `content_sha256` equals the sha-256 of that record as sent. This is a Nirium self-test on testnet, not third-party use.
 
 ### Paying from a browser
 
