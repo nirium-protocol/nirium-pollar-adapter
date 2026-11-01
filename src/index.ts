@@ -566,3 +566,77 @@ export function createNiriumAdapter(config: NiriumAdapterConfig) {
 }
 
 export type NiriumAdapter = ReturnType<typeof createNiriumAdapter>;
+
+// ── Recibos de transacciones de Pollar ───────────────────────────────────────
+//
+// Pollar emite `onTransactionStateChange` con `{ step: "success", hash }` para
+// wallets custodiales, externas, passkey y co-firmadas (lo confirma Pollar y se
+// leyo en el codigo de @pollar/core 0.11.4 y 0.12.1-rc.10). NO se emite para
+// pagos x402: esos recibos los ancla este adapter por su cuenta.
+//
+// Al suscribirse, Pollar reenvia el estado actual, y un reinicio del proceso lo
+// reenvia otra vez. Por eso se deduplica por hash dentro del proceso. No hay
+// deduplicacion entre reinicios: un mismo hash puede anclarse dos veces.
+//
+// Lo que entra a IPFS no se borra, asi que el recibo lleva solo lo minimo que
+// Pollar sugiere: chain, network, hash y observedAt. Nada de id de app ni del
+// contexto de la transaccion.
+
+/** Lo unico que se necesita del cliente de Pollar. */
+export interface PollarTransactionEvents {
+  onTransactionStateChange?: (cb: (state: any) => void) => () => void;
+}
+
+export interface AnchorOnSuccessOptions {
+  /** Cadena que se escribe en el recibo. Default: "stellar". */
+  chain?: string;
+  /** Etiqueta del recibo en Audit Trail. Default: "pollar-tx". */
+  tag?: string;
+  /** Reloj, para pruebas. Default: Date.now. */
+  now?: () => number;
+  /** Se llama si el anclaje falla. El listener de Pollar nunca lanza. */
+  onError?: (error: unknown, hash: string) => void;
+}
+
+/**
+ * Ancla un recibo en Audit Trail cada vez que una transaccion de Pollar llega a
+ * `success`. Devuelve la funcion para dejar de escuchar.
+ */
+export function anchorOnTransactionSuccess(
+  pollar: PollarTransactionEvents,
+  adapter: Pick<NiriumAdapter, "anchorAuditRecord" | "network">,
+  options: AnchorOnSuccessOptions = {},
+): () => void {
+  if (typeof pollar.onTransactionStateChange !== "function") {
+    throw new Error(
+      "anchorOnTransactionSuccess: este cliente de Pollar no tiene onTransactionStateChange.",
+    );
+  }
+  const seen = new Set<string>();
+  const now = options.now ?? Date.now;
+  return pollar.onTransactionStateChange((state: any) => {
+    if (state?.step !== "success" || typeof state.hash !== "string" || !state.hash) return;
+    const hash: string = state.hash;
+    if (seen.has(hash)) return;
+    seen.add(hash);
+    const record = {
+      chain: options.chain ?? "stellar",
+      network: isPubnet(adapter.network) ? "mainnet" : "testnet",
+      hash,
+      observedAt: new Date(now()).toISOString(),
+    };
+    Promise.resolve()
+      .then(() =>
+        adapter.anchorAuditRecord({ record, txHash: hash, tag: options.tag ?? "pollar-tx" }),
+      )
+      .catch((err) => {
+        // Si falla, se permite reintentar con el mismo hash cuando Pollar lo reenvie.
+        seen.delete(hash);
+        try {
+          options.onError?.(err, hash);
+        } catch {
+          // un onError que lanza no debe romper el listener de Pollar
+        }
+      });
+  });
+}
