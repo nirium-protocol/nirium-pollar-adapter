@@ -63,3 +63,22 @@ test("activateWallet sends the secret key in x-pollar-api-key, not Authorization
   assert.equal(seenHeaders["x-pollar-api-key"], "sec_testnet_abc123");
   assert.equal(seenHeaders["Authorization"], undefined);
 });
+
+test("activateWallet calls POST /v3/wallets/fund on the v3 server host", async () => {
+  let seen;
+  const fetchImpl = async (url, init) => {
+    seen = { url, method: init.method, body: init.body };
+    return { status: 200, json: async () => ({}) };
+  };
+  const result = await activateWallet(GOOD_KEY, { secretKey: "sec_testnet_x", fetchImpl });
+  assert.equal(seen.url, "https://server.api.pollar.xyz/v3/wallets/fund");
+  assert.equal(seen.method, "POST");
+  assert.deepEqual(JSON.parse(seen.body), { publicKey: GOOD_KEY });
+  assert.deepEqual(result, { activated: true, amount: undefined });
+});
+
+test("activateWallet reports a queued request on 202 (co-signed or self-custody wallet) without throwing", async () => {
+  const fetchImpl = mockFetch(202, { requestId: "abc" });
+  const result = await activateWallet(GOOD_KEY, { secretKey: "sec_testnet_x", fetchImpl });
+  assert.deepEqual(result, { activated: false, queued: true });
+});

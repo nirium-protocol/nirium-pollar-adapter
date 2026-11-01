@@ -312,7 +312,7 @@ export function canSignX402(pollar: PollarLikeClient): boolean {
 // En modo Deferred, Pollar crea la wallet on-chain al hacer login pero SIN
 // fondear su reserva de XLM — existe, pero no puede sostener nada más allá de
 // lo que Pollar mismo patrocina (p.ej. una trustline de sus assets por
-// defecto, vía sponsored reserves). `POST /v1/wallets/activate` paga esa
+// defecto, vía sponsored reserves). `POST /v3/wallets/fund` (antes `/v1/wallets/activate`) paga esa
 // reserva (~1 XLM base + 0.5 XLM por cada asset configurado en tu Dashboard)
 // cuando ocurre el evento de negocio que lo justifica — nunca antes, y nunca
 // desde el navegador: el endpoint exige la SECRET key (Pollar lo dice
@@ -339,7 +339,7 @@ export function canSignX402(pollar: PollarLikeClient): boolean {
 export interface ActivateWalletOptions {
   /** Secret key de Pollar (sec_testnet_… / sec_mainnet_…). SOLO backend — nunca la mandes al navegador. */
   secretKey: string;
-  /** Base URL del servidor de Pollar. Default: https://api.pollar.xyz. */
+  /** Base URL del servidor de Pollar. Default: https://server.api.pollar.xyz. */
   baseUrl?: string;
   /** fetch a envolver (para tests o runtimes sin fetch global). */
   fetchImpl?: typeof fetch;
@@ -350,6 +350,8 @@ export interface ActivateWalletResult {
   activated: boolean;
   /** Reserva de XLM fondeada, tal como la reporta Pollar. Solo viene cuando `activated` es `true` en esta llamada. */
   amount?: string;
+  /** `true` si Pollar encoló la petición (HTTP 202, wallet co-firmada o self-custody): el usuario la aprueba en su próxima sesión. */
+  queued?: boolean;
 }
 
 /** Pollar rechazó la activación con un código que no es "ya estaba activa". */
@@ -368,7 +370,7 @@ export class PollarActivationError extends Error {
 
 /**
  * Fondea la reserva de XLM on-chain de una wallet de Pollar en modo Deferred
- * (`POST /v1/wallets/activate`). Llamar SOLO desde tu backend — la secret key
+ * (`POST /v3/wallets/fund`). Llamar SOLO desde tu backend — la secret key
  * nunca debe llegar al navegador.
  *
  * Cuándo llamarla: no hay un "evento de negocio" natural en un flujo x402 puro
@@ -385,10 +387,10 @@ export async function activateWallet(
   if (!StrKey.isValidEd25519PublicKey(publicKey)) {
     throw new Error(`activateWallet: "${publicKey}" no es una dirección Stellar G... válida.`);
   }
-  const baseUrl = (options.baseUrl ?? "https://api.pollar.xyz").replace(/\/+$/, "");
+  const baseUrl = (options.baseUrl ?? "https://server.api.pollar.xyz").replace(/\/+$/, "");
   const doFetch = options.fetchImpl ?? fetch;
 
-  const res = await doFetch(`${baseUrl}/v1/wallets/activate`, {
+  const res = await doFetch(`${baseUrl}/v3/wallets/fund`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -404,8 +406,11 @@ export async function activateWallet(
     // Cuerpo vacío o no-JSON — se maneja abajo con el status solo.
   }
 
-  if (res.status === 200 && body?.success) {
-    return { activated: true, amount: body.content?.amount };
+  if (res.status === 200 && body?.success !== false) {
+    return { activated: true, amount: body?.content?.amount };
+  }
+  if (res.status === 202) {
+    return { activated: false, queued: true };
   }
   if (res.status === 409) {
     return { activated: false };

@@ -97,7 +97,7 @@ just no longer reproducible word for word with the current example.
 
 If your Pollar app's **Dashboard → Treasury → Funding Mode** is set to
 **Deferred**, a wallet is created on-chain at login but its XLM reserve is
-not funded until your backend calls `POST /v1/wallets/activate`. This
+not funded until your backend calls `POST /v3/wallets/fund`. This
 adapter did not call that endpoint until this version. The section above
 already shows why it usually does not need to: a wallet at 0 XLM can sign
 and settle a real x402 payment (Pollar sponsors the account reserve and the
@@ -182,12 +182,12 @@ that does not validate.
 
 ### `activateWallet(publicKey, options)`
 
-Funds a Pollar wallet's on-chain XLM reserve (`POST /v1/wallets/activate`). **Server-side only.**
+Funds a Pollar wallet's on-chain XLM reserve (`POST /v3/wallets/fund`). **Server-side only.**
 
 | Option | Default | |
 |---|---|---|
 | `secretKey` | - | `sec_testnet_…` / `sec_mainnet_…`. Never expose this client-side |
-| `baseUrl` | `https://api.pollar.xyz` | Pollar Server base URL |
+| `baseUrl` | `https://server.api.pollar.xyz` | Pollar Server base URL |
 | `fetchImpl` | global `fetch` | for tests or runtimes without global fetch |
 
 Returns `{ activated: boolean, amount?: string }`. Throws `PollarActivationError` (`.code`, `.status`) for anything other than success (200) or already-funded (409). Also throws a plain `Error` synchronously, before any network call, if `publicKey` is not a valid Stellar `G...` address.
