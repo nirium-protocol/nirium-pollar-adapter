@@ -53,9 +53,12 @@ function signedEntry(invocation, signatureExpirationLedger) {
 
 test("the installed @pollar/core is inside the range the peer dependency promises", () => {
   const [major, minor, patch] = POLLAR_CORE_VERSION.split(/[.-]/).map(Number);
-  assert.equal(major, 0);
-  assert.equal(minor, 11);
-  assert.ok(patch >= 4, `got ${POLLAR_CORE_VERSION}`);
+  assert.equal(major, 0, `got ${POLLAR_CORE_VERSION}`);
+  // Peer range is >=0.11.4 <0.13.0: 0.11.x from patch 4, or any 0.12.x.
+  assert.ok(
+    (minor === 11 && patch >= 4) || minor === 12,
+    `got ${POLLAR_CORE_VERSION}`,
+  );
 });
 
 test("the real PollarClient exposes signAuthEntry and getAuthState, so canSignX402 is true", () => {
