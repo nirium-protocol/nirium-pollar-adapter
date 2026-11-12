@@ -2,7 +2,9 @@
 
 Nirium adapter for the [Pollar](https://pollar.xyz) SDK. It lets the wallet a user onboarded through Pollar pay for APIs (x402) and anchor tamper-proof evidence to IPFS, without your app touching keys or learning the x402 protocol.
 
-Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**.
+Two things matter most here: **x402** pays per request, and `anchorOnTransactionSuccess()` (see [API](#api) below) anchors an Audit Trail receipt to IPFS for every Pollar transaction that reaches `success` - a verifiable, tamper-proof record of what happened, independent of this adapter's own output.
+
+Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**: the last x402 payment settled on [29 Sep 2026](https://stellar.expert/explorer/public/tx/b34630f6637d6773ad4f7378dac8690ae6d1809173ff9c9541d22165aeef5788) (a real USDC transfer on mainnet), and the last Audit Trail anchor is from 12 Nov 2026, checked live against the mainnet agent's `GET /api/reporting/summary?network=mainnet` at the time of writing (`anchors.lastAnchoredAt`).
 
 Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Python SDK this adapter signs for. See that repo for the full API this exposes through a Pollar wallet instead of a raw keypair.
 
@@ -57,6 +59,8 @@ import { canSignX402 } from "nirium-pollar-adapter";
 ```
 
 ## Verify it end-to-end today
+
+**Known issue:** [pollar-xyz/pollar-apps#36](https://github.com/pollar-xyz/pollar-apps/pull/36) fixes a real `XDR Read Error` that breaks payment in Pollar's own official Nirium demo today; still open as of this writing.
 
 The signer is pluggable, so you can prove the whole path works with a plain Stellar keypair. No Pollar required - this defaults to testnet, no real money moves:
 
