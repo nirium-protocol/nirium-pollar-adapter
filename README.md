@@ -4,7 +4,7 @@ Nirium adapter for the [Pollar](https://pollar.xyz) SDK. It lets the wallet a us
 
 Two things matter most here: **x402** pays per request, and `anchorOnTransactionSuccess()` (see [API](#api) below) anchors an Audit Trail receipt to IPFS for every Pollar transaction that reaches `success` - a verifiable, tamper-proof record of what happened, independent of this adapter's own output.
 
-Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**: the last x402 payment settled on [29 Sep 2026](https://stellar.expert/explorer/public/tx/b34630f6637d6773ad4f7378dac8690ae6d1809173ff9c9541d22165aeef5788) (a real USDC transfer, not a test), and the last Audit Trail anchor is from 12 Nov 2026, checked live against the mainnet agent's `GET /api/reporting/summary` at the time of writing (`anchors.lastAnchoredAt`).
+Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**: the last x402 payment settled on [29 Sep 2026](https://stellar.expert/explorer/public/tx/b34630f6637d6773ad4f7378dac8690ae6d1809173ff9c9541d22165aeef5788) (a real USDC transfer on mainnet), and the last Audit Trail anchor is from 12 Nov 2026, checked live against the mainnet agent's `GET /api/reporting/summary?network=mainnet` at the time of writing (`anchors.lastAnchoredAt`).
 
 Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Python SDK this adapter signs for. See that repo for the full API this exposes through a Pollar wallet instead of a raw keypair.
 
