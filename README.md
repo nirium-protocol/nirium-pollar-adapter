@@ -8,6 +8,8 @@ Both surfaces are **software-only and non-custodial**, and both are **live on St
 
 Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Python SDK this adapter signs for. See that repo for the full API this exposes through a Pollar wallet instead of a raw keypair.
 
+**Referenced by Pollar.** Pollar's official [x402 payments guide](https://docs.pollar.xyz/docs/guides/x402-payments) uses this adapter and Nirium's endpoints as its "Try it against Nirium" example (checked 14 Nov 2026). That is a documentation reference, not Pollar using Nirium in its own product.
+
 ## Install
 
 ```bash
