@@ -1,5 +1,9 @@
 # nirium-pollar-adapter
 
+[![CI](https://github.com/nirium-protocol/nirium-pollar-adapter/actions/workflows/ci.yml/badge.svg)](https://github.com/nirium-protocol/nirium-pollar-adapter/actions/workflows/ci.yml)
+[![Security Gate](https://github.com/nirium-protocol/nirium-pollar-adapter/actions/workflows/security-gate.yml/badge.svg)](https://github.com/nirium-protocol/nirium-pollar-adapter/actions/workflows/security-gate.yml)
+[![npm](https://img.shields.io/npm/v/nirium-pollar-adapter)](https://www.npmjs.com/package/nirium-pollar-adapter)
+
 Nirium adapter for the [Pollar](https://pollar.xyz) SDK. It lets the wallet a user onboarded through Pollar pay for APIs (x402) and anchor tamper-proof evidence to IPFS, without your app touching keys or learning the x402 protocol.
 
 Two things matter most here: **x402** pays per request, and `anchorOnTransactionSuccess()` (see [API](#api) below) anchors an Audit Trail receipt to IPFS for every Pollar transaction that reaches `success` - a verifiable, tamper-proof record of what happened, independent of this adapter's own output.
@@ -9,6 +13,8 @@ Both surfaces are **software-only and non-custodial**, and both are **live on St
 Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Python SDK this adapter signs for. See that repo for the full API this exposes through a Pollar wallet instead of a raw keypair.
 
 **Referenced by Pollar.** Pollar's official [x402 payments guide](https://docs.pollar.xyz/docs/guides/x402-payments) uses this adapter and Nirium's endpoints as its "Try it against Nirium" example (checked 14 Nov 2026). That is a documentation reference, not Pollar using Nirium in its own product.
+
+**Try it in a browser:** [nirium-pollar-x402-demo.vercel.app](https://nirium-pollar-x402-demo.vercel.app) (testnet): log in with Pollar, pay 0.05 test USDC, open the receipt at nirium.xyz/verify.
 
 ## Install
 
@@ -42,7 +48,7 @@ The user pays **$0.05 USDC** and signs nothing else. The x402 facilitator sponso
 
 ### Requires @pollar/core 0.11.4+
 
-`createPollarSigner` calls `PollarClient.signAuthEntry`, available from `@pollar/core` 0.11. The peer range is `>=0.11.4 <0.13.0`; CI runs the contract test against 0.11.4; 0.12.0 was also run by hand on 2026-10-31. On older versions it throws an explanatory error, and you can still pass any other SEP-43 signer.
+`createPollarSigner` calls `PollarClient.signAuthEntry`, available from `@pollar/core` 0.11. The peer range is `>=0.11.4 <0.13.0`; CI runs the type check and the full test suite against both ends of it, 0.11.4 and 0.12.0. On older versions it throws an explanatory error, and you can still pass any other SEP-43 signer.
 
 The two sides speak different dialects and the adapter translates between them: x402 expects SEP-43 (`signAuthEntry(xdr, { networkPassphrase, address }) → { signedAuthEntry }`), Pollar expects `signAuthEntry(xdr, { validUntilLedger }) → { status, … }`. The adapter reads the network's latest ledger, sets the expiry, and normalises the outcome. You do not deal with any of it.
 
@@ -62,7 +68,7 @@ import { canSignX402 } from "nirium-pollar-adapter";
 
 ## Verify it end-to-end today
 
-**Known issue:** [pollar-xyz/pollar-apps#36](https://github.com/pollar-xyz/pollar-apps/pull/36) fixes a real `XDR Read Error` that breaks payment in Pollar's own official Nirium demo today; still open as of this writing.
+**Demo app:** the Nirium demo in `pollar-xyz/pollar-apps` had a real `XDR Read Error` on payment. The fix, plus USDC balance, receipt links and clear Pollar error messages, is in [pollar-xyz/pollar-apps#37](https://github.com/pollar-xyz/pollar-apps/pull/37) (open, awaiting Pollar's review; it includes the earlier #36). The live demo already runs that branch: a testnet payment through it settled on 15 Nov 2026 UTC ([`75c8b590…`](https://stellar.expert/explorer/testnet/tx/75c8b590d2ddef1b0d082df43f90cad9ac4d1014678e3d8b34df8dae284c8fb0)) and its receipt verifies at [nirium.xyz/verify](https://nirium.xyz/verify?cid=QmcwsCMfd53mSFAXocRqTXdiJkAkU6DnRf9Dup7pR8Y6EZ). That payment was our own test.
 
 The signer is pluggable, so you can prove the whole path works with a plain Stellar keypair. No Pollar required - this defaults to testnet, no real money moves:
 
@@ -176,7 +182,7 @@ the signer a **`HashIdPreimage`** (the thing about to be hashed) and expects
 the **raw signature** back; it assembles the final entry itself. Pollar's
 `POST /tx/sign-auth-entry` expects the full **`SorobanAuthorizationEntry`** and
 returns the **signed entry**, because its backend checks the invocation tree
-against your Auth Policy allowlist before signing, and a hash would tell it
+against your app's signing rules before signing, and a hash would tell it
 nothing. Both designs are right; they are just not the same one.
 
 Without translation Pollar answers `SOROBAN_AUTH_ENTRY_INVALID - "entryXdr is
@@ -217,7 +223,7 @@ const stop = anchorOnTransactionSuccess(pollar, adapter, {
 
 The receipt carries only `chain`, `network`, `hash` and `observedAt` (no app id), because what goes into IPFS is not deleted. Pollar replays the current state when you subscribe, so the function deduplicates by hash inside the process. It does not deduplicate across restarts: the same hash can be anchored twice. A failed anchor goes to `onError` and never throws into Pollar's listener; the hash can be retried when Pollar sends it again. Options: `chain` (default `"stellar"`), `tag` (default `"pollar-tx"`), `onError`.
 
-Checked against `@pollar/core` 0.11.4 and 0.12.0 in the test suite.
+Checked against `@pollar/core` 0.11.4 and 0.12.0 in CI.
 
 **Live check, 2026-11-01, testnet.** `examples/spike-19/anchor-on-success.mjs` logs in to a Pollar testnet app, sends 1 XLM through `pollar.sendPayment`, and anchors the receipt. Transaction [`95717202...b7b`](https://horizon-testnet.stellar.org/transactions/95717202be514ed0ae6d59d88c5950d79ff94b40dad709a430691ad6c4449b7b) (successful, ledger 5506358, 1 payment op) produced Audit Trail receipt [`QmboKKkuwck3zvRx2bqnzUdDFkrEtc1VUHo6rrzm9nyBtD`](https://gateway.pinata.cloud/ipfs/QmboKKkuwck3zvRx2bqnzUdDFkrEtc1VUHo6rrzm9nyBtD). The record holds only `chain`, `network`, `hash` and `observedAt`, and `content_sha256` equals the sha-256 of that record as sent. This is a Nirium self-test on testnet, not third-party use.
 
@@ -235,9 +241,11 @@ that point somewhere else:
 Client side, `connect-src` must list the resource server, the Soroban RPC and
 `sdk.api.pollar.xyz`.
 
-Pollar side: allowlist the USDC SAC with the `transfer` function under
-**Treasury → Auth Policy**. Until a contract is listed, every custodial signing
-request is rejected.
+Pollar side (dashboard names as in Pollar's [x402 guide](https://docs.pollar.xyz/docs/guides/x402-payments)):
+under **Wallets → Signing rules**, add the USDC SAC with the function `transfer`,
+in lowercase (`Transfer` authorizes nothing). Until a contract is listed, every
+custodial signing request is rejected. Also enable USDC under **Tokens**, so
+wallets get the trustline.
 
 ## How this relates to Pollar's `AdapterFn` pattern
 
@@ -251,7 +259,7 @@ In practice:
 - Nirium operations that do return an unsigned transaction (treasury, payouts) are not exposed here as `AdapterFn`s. They are invite-only on mainnet and outside the scope of this package.
 - A registry-pattern version of the payment flow is not shipped. Whether one is possible depends on how an adapter could hand back a signed authorization entry instead of a transaction. That is an open design question, not a plan.
 
-Checked on 2026-10-12 against the published `@pollar/core` 0.11.4 and `@pollar/react` 0.11.4 packages, not their docs. CI runs a contract test against the real `@pollar/core` 0.11.4 (`test/pollar-contract.test.mjs` and a compile-time check in `test/pollar-contract.types.ts`), so a change in the shape this package relies on fails the build.
+Checked on 2026-10-12 against the published `@pollar/core` 0.11.4 and `@pollar/react` 0.11.4 packages, not their docs. CI runs a contract test against the real `@pollar/core` 0.11.4 and 0.12.0 (`test/pollar-contract.test.mjs` and a compile-time check in `test/pollar-contract.types.ts`), so a change in the shape this package relies on fails the build.
 
 ## Scope
 

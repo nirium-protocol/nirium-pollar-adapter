@@ -1,0 +1,62 @@
+# Security Gate: blocks a merge on a known high+ vulnerability in what this
+# package installs, or on a committed secret. Same tools and pinned versions
+# as nirium-protocol/nirium (audit-ci 7, gitleaks 8.28.0, checksum-verified).
+name: Security Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # No allowlist: the zod advisory (GHSA-mrhx-c7xc-m3w5) that CI used to
+      # allowlist is gone since @x402/core 2.29.0, which depends on zod
+      # ^4.6.6 (checked 15 Nov 2026: `npm ls zod` -> 4.6.7, `npm audit` -> 0).
+      - name: npm audit (high+ blocks the build)
+        run: npx --yes audit-ci@7 --high
+
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.28.0
+      GITLEAKS_SHA256: a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          curl -sSfL -o gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz -C "$RUNNER_TEMP" gitleaks
+          rm gitleaks.tar.gz
+      # Pull requests: scan only the PR's own commits. Pushes to main: scan the
+      # whole history (small repo, a few seconds), so the badge reflects all of it.
+      - name: Scan for secrets
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            "$RUNNER_TEMP/gitleaks" git --no-banner --redact --verbose \
+              --config .gitleaks.toml --log-opts="${BASE_SHA}..${HEAD_SHA}" .
+          else
+            "$RUNNER_TEMP/gitleaks" git --no-banner --redact --verbose \
+              --config .gitleaks.toml .
+          fi
