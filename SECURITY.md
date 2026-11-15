@@ -29,9 +29,12 @@ Please include:
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| **`createNiriumAdapter` / `x402Fetch`** | ✅ Internal review passed | Negotiates the 402, signs through the configured signer, retries |
-| **`createPollarSigner` / `signAuthEntry` translation** | ✅ Internal review passed | Converts between stellar-sdk's `HashIdPreimage` and Pollar's `SorobanAuthorizationEntry` |
-| **`activateWallet`** | ✅ Internal review passed | Server-side only; requires the caller's own secret key |
+| **`createNiriumAdapter` / `x402Fetch`** | In scope · internal review only, no external audit | Negotiates the 402, signs through the configured signer, retries |
+| **`createPollarSigner` / `signAuthEntry` translation** | In scope · internal review only, no external audit | Converts between stellar-sdk's `HashIdPreimage` and Pollar's `SorobanAuthorizationEntry` |
+| **`activateWallet`** | In scope · internal review only, no external audit | Server-side only; requires the caller's own secret key |
+| **`anchorOnTransactionSuccess`** | In scope · internal review only, no external audit | Anchors only `chain`, `network`, `hash` and `observedAt`; never throws into Pollar's listener |
+
+**Update, 2026-11-15:** the status column above previously read "✅ Internal review passed". A review by our own team is not a pass from anyone independent, so it now says what it is.
 
 Nirium's Soroban contracts, agent API and frontend are in scope of their own repos ([`nirium-core`](https://github.com/nirium-protocol/nirium-core), [`nirium`](https://github.com/nirium-protocol/nirium)), not this one - report issues there against those components instead.
 
@@ -55,33 +58,14 @@ Nirium's Soroban contracts, agent API and frontend are in scope of their own rep
 
 ### Security Measures Currently in Place
 
-**Smart Contract Layer (Soroban):**
-- `require_auth` on all state-modifying contract functions
-- `checked_*` arithmetic throughout (no silent overflow)
-- `max_execution_amount` cap per agent delegation - hard physical limit
-- Emergency multisig pause: 2-of-3 pattern (admin + cosigner) via `pause()` / `unpause()`
-- Agent kill switch: `revoke_agent()` callable even while contract is paused
-- Persistent storage TTL extensions (~2 years) on every interaction (SC-TTL-001)
-- Admin-signed `initialize()` to prevent front-running at deployment
-- Strategy Marketplace: canonical USDC token address stored at init (token-spoofing fix)
+**In this package:**
+- Non-custodial: the adapter never holds or sees a private key. It signs through the signer you pass (a Pollar wallet or your own SEP-43 signer); the x402 facilitator settles.
+- The signature expiry is read from the authorization preimage, never from the clock, so a signature cannot be stretched past what the payer approved (`validityLedgers` defaults to 120, about 10 minutes, when an entry is passed directly).
+- `activateWallet` rejects an invalid Stellar `G...` address before any network call, is documented as server-side only, and surfaces Pollar's own error `code` and HTTP `status` instead of guessing.
+- `anchorOnTransactionSuccess` anchors only four non-personal fields and deduplicates by hash within the process; a failed anchor goes to `onError` and never breaks Pollar's listener.
+- CI runs the type check and 31 tests against `@pollar/core` 0.11.4 and 0.12.0. The Security Gate blocks a merge on any high+ advisory in the installed dependencies (`audit-ci`, no allowlist) and on any committed secret (gitleaks 8.28.0, checksum-verified; whole history on every push to `main`).
 
-**API Layer:**
-- JWT: HS256, 1h expiry, RBAC tiers (public / sandbox / institutional / admin)
-- API keys stored as SHA-256 hash only - irrecoverable after issuance
-- `timingSafeEqual` for all key comparisons
-- SQL injection guards on all query params
-- Prompt injection sanitization on all LLM inputs
-- Prototype pollution guard
-- HMAC-SHA256 webhook signature validation
-- Sliding-window rate limiting (60/30/300 rpm by tier)
-- domainLock and response obfuscation modules exist in the main agent's repo but are not mounted on any route. **Update, 2026-10-23:** this line previously also listed "AML screening" as a live control; that middleware was never imported or mounted on any route and has been removed as dead code (none of this is in this repo's own code either way, see the Scope note above).
-
-**Infrastructure:**
-- Row Level Security (RLS) on all Supabase tables - **Update, 2026-10-23 (checked against the live project that day, read-only HEAD requests with no row content fetched):** this line was false for six tables (`auth_keys`, `payroll_runs`, `treasury_vaults`, `security_events`, `sandbox_accounts`, `sandbox_usage`), all readable in full by the public anon key the browser ships, because the agent's own backend used that same anon key for privileged access and their RLS policies were left permissive to compensate. The agent's database client has been switched to the service_role key (which does not depend on RLS at all); a migration to remove the permissive policies and restrict those six tables to `service_role` is prepared but not yet applied to the live project as of this update. Tables that stay intentionally open to anon (`logs`, `agent_logs`, `nirium_swarm_agents`, `strategies`, `nirium_protocol_records` - the public verifiable feed; `vault_delegations`'s anon insert/update/active-only-select, a documented design relying on on-chain signature verification, not RLS; `nirium_llm_config`, documented as holding no sensitive data) are not covered by this line and were not changed.
-- Non-custodial architecture - users retain sole key control
-- HMAC-SHA256 signed immutable audit trail per agent action
-- x402/MPP payment validation middleware on all premium routes
-- `legalShield` middleware: TOS consent check via `x-stellar-account` header
+**Outside this package:** the Soroban contracts, the agent API and the hosted infrastructure this adapter talks to have their own measures and their own scope, listed in [`nirium-core`'s SECURITY.md](https://github.com/nirium-protocol/nirium-core/blob/main/SECURITY.md) and [`nirium`'s SECURITY.md](https://github.com/nirium-protocol/nirium/blob/main/SECURITY.md). **Update, 2026-11-15:** this section previously copied those lists here, including a database note that had since been resolved upstream; it now links to the source instead of repeating it.
 
 ## Responsible Disclosure
 
@@ -99,7 +83,7 @@ We appreciate the security research community's efforts. Reporters of valid secu
 
 - **Security issues:** niriumprotocol@gmail.com
 - **General inquiries:** niriumprotocol@gmail.com
-- **Twitter/X:** [@NiriumXYZ](https://x.com/Niriumstellar)
+- **Twitter/X:** [@Niriumstellar](https://x.com/Niriumstellar)
 
 ---
 
