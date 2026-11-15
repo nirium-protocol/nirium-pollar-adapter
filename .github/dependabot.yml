@@ -5,6 +5,12 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    # @x402/core, @x402/fetch and @x402/stellar pin each other (~x.y.0) and must move
+    # together; one grouped PR instead of three that leave mixed versions in between.
+    groups:
+      x402:
+        patterns:
+          - "@x402/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
