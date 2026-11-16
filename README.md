@@ -267,7 +267,7 @@ Checked on 2026-10-12 against the published `@pollar/core` 0.11.4 and `@pollar/r
 |---|---|
 | x402 Settlement | ✅ mainnet |
 | Audit Trail (IPFS) | ✅ mainnet |
-| Treasury vault (DeFindex, client-owned), Nirium signs and executes | ✅ mainnet, invite-only during legal review |
+| Treasury vault (DeFindex, client-owned), Nirium signs and executes | ✅ mainnet, invite-only until a written legal opinion |
 | Treasury vault, propose only, you sign | ✅ mainnet, public, no invite required (`POST /api/treasury/rebalance/propose`, not yet wrapped by this adapter) |
 | Nirium's own NiriumVault | audit-gated, testnet only |
 | MPP session channels | audit-gated, testnet only |
