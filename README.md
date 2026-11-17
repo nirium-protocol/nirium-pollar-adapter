@@ -16,6 +16,32 @@ Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Pyth
 
 **Try it in a browser:** [nirium-pollar-x402-demo.vercel.app](https://nirium-pollar-x402-demo.vercel.app) (testnet): log in with Pollar, pay 0.05 test USDC, open the receipt at nirium.xyz/verify.
 
+## How it works
+
+The user logs in with email or Google, the Pollar wallet signs, the facilitator pays the network fee, and the app gets a receipt anyone can verify.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User<br/>(email or Google login)
+    participant W as Pollar wallet
+    participant A as Your app<br/>+ nirium-pollar-adapter
+    participant S as Paid API (x402)
+    participant F as x402 facilitator
+    participant N as Nirium Audit Trail
+    U->>A: logs in with Pollar
+    A->>S: request
+    S-->>A: 402, price in USDC
+    A->>W: signAuthEntry (adapter translates SEP-43 to Pollar)
+    W-->>A: signed auth entry, the key stays in the wallet
+    A->>S: retry with the payment
+    S->>F: settle, facilitator pays the fee (user holds 0 XLM)
+    S-->>A: 200 + the data
+    A->>N: anchorOnTransactionSuccess()
+    N-->>A: receipt CID, anyone can verify it
+```
+
+
 ## Install
 
 ```bash
