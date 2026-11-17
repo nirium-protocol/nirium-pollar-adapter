@@ -1,7 +1,7 @@
 {
   "name": "nirium-pollar-adapter",
-  "version": "0.6.3",
-  "description": "Nirium adapter for the Pollar SDK — x402 pay-per-request and IPFS audit anchoring using the wallet a user onboarded through Pollar. Signs SEP-43 auth entries; the facilitator sponsors network fees. Includes Deferred-mode wallet activation (POST /v1/wallets/activate).",
+  "version": "0.6.4",
+  "description": "Let Pollar users who sign in with email or Google pay per request (x402) on Stellar and get a receipt anyone can verify. The facilitator sponsors network fees.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -38,12 +38,16 @@
     "typescript": "^5.7.0"
   },
   "keywords": [
-    "nirium",
-    "pollar",
     "stellar",
-    "soroban",
     "x402",
-    "adapter"
+    "usdc",
+    "payments",
+    "pay-per-request",
+    "ai-agents",
+    "agentic-payments",
+    "receipts",
+    "audit-trail",
+    "pollar"
   ],
   "homepage": "https://nirium.xyz",
   "repository": {
