@@ -4,7 +4,7 @@
 [![Security Gate](https://github.com/nirium-protocol/nirium-pollar-adapter/actions/workflows/security-gate.yml/badge.svg)](https://github.com/nirium-protocol/nirium-pollar-adapter/actions/workflows/security-gate.yml)
 [![npm](https://img.shields.io/npm/v/nirium-pollar-adapter)](https://www.npmjs.com/package/nirium-pollar-adapter)
 
-Nirium adapter for the [Pollar](https://pollar.xyz) SDK. It lets the wallet a user onboarded through Pollar pay for APIs (x402) and anchor tamper-proof evidence to IPFS, without your app touching keys or learning the x402 protocol.
+Nirium adapter for the [Pollar](https://pollar.xyz) SDK. It lets the wallet a user onboarded through Pollar pay for APIs (x402) and anchor tamper-evident records to IPFS, without your app touching keys or learning the x402 protocol.
 
 Two things matter most here: **x402** pays per request, and `anchorOnTransactionSuccess()` (see [API](#api) below) anchors an Audit Trail receipt to IPFS for every Pollar transaction that reaches `success`. The payment itself is already on the ledger; the receipt is worth more when you bind it to your own order or request record (see [`anchorOnTransactionSuccess`](#anchorontransactionsuccesspollarclient-adapter-options) below).
 
