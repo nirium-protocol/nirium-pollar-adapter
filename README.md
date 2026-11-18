@@ -6,7 +6,9 @@
 
 Nirium adapter for the [Pollar](https://pollar.xyz) SDK. It lets the wallet a user onboarded through Pollar pay for APIs (x402) and anchor tamper-proof evidence to IPFS, without your app touching keys or learning the x402 protocol.
 
-Two things matter most here: **x402** pays per request, and `anchorOnTransactionSuccess()` (see [API](#api) below) anchors an Audit Trail receipt to IPFS for every Pollar transaction that reaches `success` - a verifiable, tamper-proof record of what happened, independent of this adapter's own output.
+Two things matter most here: **x402** pays per request, and `anchorOnTransactionSuccess()` (see [API](#api) below) anchors an Audit Trail receipt to IPFS for every Pollar transaction that reaches `success`. The payment itself is already on the ledger; the receipt is worth more when you bind it to your own order or request record (see [`anchorOnTransactionSuccess`](#anchorontransactionsuccesspollarclient-adapter-options) below).
+
+**What a receipt adds over the ledger:** a Stellar payment is already public, so a receipt that only repeats payer, payee and amount proves nothing new; link the transaction instead. Receipts are for what the ledger doesn't hold: policy decisions (including refused payments that were never signed), what a payment was for, off-chain records, and who declared them. More in the [design FAQ](https://github.com/nirium-protocol/nirium/blob/main/docs/DESIGN-FAQ.md).
 
 Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**: the last x402 payment settled on [29 Sep 2026](https://stellar.expert/explorer/public/tx/b34630f6637d6773ad4f7378dac8690ae6d1809173ff9c9541d22165aeef5788) (a real USDC transfer on mainnet), and the last Audit Trail anchor is from 12 Nov 2026, checked live against the mainnet agent's `GET /api/reporting/summary?network=mainnet` at the time of writing (`anchors.lastAnchoredAt`).
 
@@ -248,6 +250,8 @@ const stop = anchorOnTransactionSuccess(pollar, adapter, {
 ```
 
 The receipt carries only `chain`, `network`, `hash` and `observedAt` (no app id), because what goes into IPFS is not deleted. Pollar replays the current state when you subscribe, so the function deduplicates by hash inside the process. It does not deduplicate across restarts: the same hash can be anchored twice. A failed anchor goes to `onError` and never throws into Pollar's listener; the hash can be retried when Pollar sends it again. Options: `chain` (default `"stellar"`), `tag` (default `"pollar-tx"`), `onError`.
+
+**What this receipt adds:** the transaction itself is already on the ledger, so this record only shows that your app observed it, at the time its own clock gave. To make a receipt worth more than the ledger, bind the transaction to something only you hold: call `adapter.anchorAuditRecord()` yourself with the hash of your order or request ID next to `txHash`.
 
 Checked against `@pollar/core` 0.11.4 and 0.12.0 in CI.
 
