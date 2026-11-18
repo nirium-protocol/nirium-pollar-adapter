@@ -1,6 +1,6 @@
 {
   "name": "nirium-pollar-adapter",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "Let Pollar users who sign in with email or Google pay per request (x402) on Stellar and get a receipt anyone can verify. The facilitator sponsors network fees.",
   "type": "module",
   "main": "dist/index.js",
