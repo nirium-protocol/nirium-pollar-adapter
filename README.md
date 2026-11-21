@@ -10,7 +10,7 @@ Two things matter most here: **x402** pays per request, and `anchorOnTransaction
 
 **What a receipt adds over the ledger:** a Stellar payment is already public, so a receipt that only repeats payer, payee and amount proves nothing new; link the transaction instead. Receipts are for what the ledger doesn't hold: policy decisions (including refused payments that were never signed), what a payment was for, off-chain records, and who declared them. More in the [design FAQ](https://github.com/nirium-protocol/nirium/blob/main/docs/DESIGN-FAQ.md).
 
-Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**: the last x402 payment settled on [29 Sep 2026](https://stellar.expert/explorer/public/tx/b34630f6637d6773ad4f7378dac8690ae6d1809173ff9c9541d22165aeef5788) (a real USDC transfer on mainnet), and the last Audit Trail anchor is from 12 Nov 2026, checked live against the mainnet agent's `GET /api/reporting/summary?network=mainnet` at the time of writing (`anchors.lastAnchoredAt`).
+Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**: the last x402 payment settled on [18 Nov 2026](https://stellar.expert/explorer/public/tx/0f6250773f9c3311bb27da64f5194c06e5d24cf2507d234a9df8c17ad156994b) (a real USDC transfer on mainnet), and the last Audit Trail anchor is from 18 Nov 2026, both checked on 21 Nov 2026 against Horizon and the mainnet agent's `GET /api/reporting/summary?network=mainnet` (`anchors.lastAnchoredAt`).
 
 Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Python SDK this adapter signs for. See that repo for the full API this exposes through a Pollar wallet instead of a raw keypair.
 
