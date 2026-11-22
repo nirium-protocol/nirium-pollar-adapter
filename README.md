@@ -10,7 +10,7 @@ Two things matter most here: **x402** pays per request, and `anchorOnTransaction
 
 **What a receipt adds over the ledger:** a Stellar payment is already public, so a receipt that only repeats payer, payee and amount proves nothing new; link the transaction instead. Receipts are for what the ledger doesn't hold: policy decisions (including refused payments that were never signed), what a payment was for, off-chain records, and who declared them. More in the [design FAQ](https://github.com/nirium-protocol/nirium/blob/main/docs/DESIGN-FAQ.md).
 
-Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**: the last x402 payment settled on [18 Nov 2026](https://stellar.expert/explorer/public/tx/0f6250773f9c3311bb27da64f5194c06e5d24cf2507d234a9df8c17ad156994b) (a real USDC transfer on mainnet), and the last Audit Trail anchor is from 18 Nov 2026, both checked on 21 Nov 2026 against Horizon and the mainnet agent's `GET /api/reporting/summary?network=mainnet` (`anchors.lastAnchoredAt`).
+Both surfaces are **software-only and non-custodial**, and both are **live on Stellar mainnet**: the last x402 payment settled on [18 Nov 2026](https://stellar.expert/explorer/public/tx/0f6250773f9c3311bb27da64f5194c06e5d24cf2507d234a9df8c17ad156994b) (a real USDC transfer on mainnet), and the last Audit Trail anchor is from 18 Nov 2026, both checked on 22 Nov 2026 against Horizon and the mainnet agent's `GET /api/reporting/summary?network=mainnet` (`anchors.lastAnchoredAt`).
 
 Wraps [`nirium`](https://github.com/nirium-protocol/nirium), the TypeScript/Python SDK this adapter signs for. See that repo for the full API this exposes through a Pollar wallet instead of a raw keypair.
 
@@ -300,7 +300,7 @@ Checked on 2026-10-12 against the published `@pollar/core` 0.11.4 and `@pollar/r
 | Treasury vault (DeFindex, client-owned), Nirium signs and executes | ✅ mainnet, invite-only until a written legal opinion |
 | Treasury vault, propose only, you sign | ✅ testnet, open; mainnet, invite-only (`POST /api/treasury/rebalance/propose`, not yet wrapped by this adapter) |
 | Nirium's own NiriumVault | audit-gated, testnet only |
-| MPP session channels | audit-gated, testnet only |
+| MPP session channels | disabled on both networks (`channel.enabled: false` in `/api/v1/mpp/info`): a channel deposit would be temporary custody, so it waits on the same audit gate |
 
 Nirium never holds customer funds. The user's signature is the authorization; independent partners execute any financial settlement.
 
