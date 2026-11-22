@@ -39,7 +39,7 @@ sequenceDiagram
     A->>S: retry with the payment
     S->>F: settle, facilitator pays the fee (user holds 0 XLM)
     S-->>A: 200 + the data
-    A->>N: anchorOnTransactionSuccess()
+    A->>N: adapter.anchorAuditRecord({ record }): what the call was for
     N-->>A: receipt CID, anyone can verify it
 ```
 
