@@ -189,7 +189,7 @@ Returns:
 - **`x402Fetch(url, init?)`**: fetch that pays on `402` and retries. Passes through untouched on `200`.
 - **`getPremiumSignals()`**: typed shortcut to the agent's paid signals endpoint. **Testnet only**: signals come from the autonomous loop, which does not run on the mainnet box; there the endpoint returns 501 without charging.
 - **`getPremiumMarket()`**: typed shortcut to the agent's paid market-state endpoint ($0.05). Works and charges on **both** networks, with no dependency on the autonomous loop.
-- **`anchorAuditRecord({ hash?, record?, txHash?, tag? })`**: anchors evidence to IPFS and returns the CID. No signature, no payment. Anchor **hashes, not personal data**: IPFS cannot be deleted.
+- **`anchorAuditRecord({ hash?, record?, txHash?, tag? })`**: anchors evidence to IPFS and returns the CID. No signature, no payment. Anchor **hashes, not personal data**: nobody can guarantee that something is deleted from IPFS, since anyone with the CID may have kept a copy.
 - **`getCetesRate()`**: CETES rate as a number, no key required. It is **not a live reading**: today the agent serves a fixed value (5.57, read in June 2026 from app.etherfuse.com/b/cetes).
 
 ### `createPollarSigner(pollarClient, opts?)`
